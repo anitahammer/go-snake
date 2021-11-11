@@ -159,6 +159,9 @@ func run() {
 		drawFood(imd, gameSettings, snakeFood)
 		drawSnake(imd, gameSettings, snake)
 
+		win.Clear(NOKIA_BACKGROUND_COLOR)
+		imd.Draw(win)
+
 		if gameState.IsGameOver {
 			fmt.Fprintln(basicTxt, "GAME OVER.")
 			basicTxt.Draw(win, pixel.IM.Scaled(basicTxt.Orig, 2))
@@ -167,9 +170,6 @@ func run() {
 		scoreText.Clear()
 		fmt.Fprintln(scoreText, "SCORE", gameState.Score)
 		scoreText.Draw(win, pixel.IM.Scaled(scoreText.Orig, 3))
-
-		win.Clear(NOKIA_BACKGROUND_COLOR)
-		imd.Draw(win)
 
 		if time.Now().UnixMilli()-lastUpdate > int64(gameState.Speed) && !gameState.IsGameOver {
 
