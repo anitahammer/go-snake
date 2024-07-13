@@ -33,6 +33,7 @@ type GameState struct {
 	Speed              float64
 	NextMoveOperations *list.List
 	IsGameOver         bool
+	Debug              bool
 }
 
 func drawGrid(imd *imdraw.IMDraw, gameSettings GameSettings) {
@@ -60,15 +61,19 @@ func drawFood(imd *imdraw.IMDraw, gameSettings GameSettings, snakeFood []SnakeFo
 	}
 }
 
-func drawSnake(imd *imdraw.IMDraw, gameSettings GameSettings, snake Snake, progress float64) {
-	// imd.Color = colornames.Salmon
-	// for _, segment := range snake.Segments {
-	// 	imd.Push(segment.Add(pixel.V(+1, +1)))
-	// 	imd.Push(segment.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
-	// 	imd.Rectangle(0)
-	// }
+func drawSnake(imd *imdraw.IMDraw, gameState GameState, gameSettings GameSettings, snake Snake, progress float64) {
+	if gameState.Debug {
+		imd.Color = colornames.Salmon
+		for _, segment := range snake.Segments {
+			imd.Push(segment.Add(pixel.V(+1, +1)))
+			imd.Push(segment.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
+			imd.Rectangle(0)
+		}
+	}
 
 	progress = math.Min(progress, 1)
+	headProgress := progress - math.Sin(progress*2*math.Pi)/10
+	tailProgress := progress + math.Sin(progress*2*math.Pi)/5
 	imd.Color = snake.Color
 
 	headDirection := snake.getHeadDirection()
@@ -76,16 +81,16 @@ func drawSnake(imd *imdraw.IMDraw, gameSettings GameSettings, snake Snake, progr
 	switch headDirection {
 	case Up:
 		imd.Push(head.Add(pixel.V(1, 1)))
-		imd.Push(head.Add(pixel.V(gameSettings.CellSize-1, 1+progress*(gameSettings.CellSize-2))))
+		imd.Push(head.Add(pixel.V(gameSettings.CellSize-1, 1+headProgress*(gameSettings.CellSize-2))))
 	case Down:
-		imd.Push(head.Add(pixel.V(1, 1+(1-progress)*(gameSettings.CellSize-2))))
+		imd.Push(head.Add(pixel.V(1, 1+(1-headProgress)*(gameSettings.CellSize-2))))
 		imd.Push(head.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
 	case Left:
-		imd.Push(head.Add(pixel.V(1+(1-progress)*(gameSettings.CellSize-2), 1)))
+		imd.Push(head.Add(pixel.V(1+(1-headProgress)*(gameSettings.CellSize-2), 1)))
 		imd.Push(head.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
 	case Right:
 		imd.Push(head.Add(pixel.V(1, 1)))
-		imd.Push(head.Add(pixel.V(1+progress*(gameSettings.CellSize-2), gameSettings.CellSize-1)))
+		imd.Push(head.Add(pixel.V(1+headProgress*(gameSettings.CellSize-2), gameSettings.CellSize-1)))
 	}
 	imd.Rectangle(0)
 
@@ -95,22 +100,20 @@ func drawSnake(imd *imdraw.IMDraw, gameSettings GameSettings, snake Snake, progr
 		imd.Rectangle(0)
 	}
 
-	// apply func to progress
-
 	tailDirection := snake.getTailDirection()
 	tail := snake.Segments[len(snake.Segments)-1]
 	switch tailDirection {
 	case Up:
-		imd.Push(tail.Add(pixel.V(1, 1+progress*(gameSettings.CellSize-2))))
+		imd.Push(tail.Add(pixel.V(1, 1+tailProgress*(gameSettings.CellSize-2))))
 		imd.Push(tail.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
 	case Down:
 		imd.Push(tail.Add(pixel.V(1, 1)))
-		imd.Push(tail.Add(pixel.V(gameSettings.CellSize-1, 1+(1-progress)*(gameSettings.CellSize-2))))
+		imd.Push(tail.Add(pixel.V(gameSettings.CellSize-1, 1+(1-tailProgress)*(gameSettings.CellSize-2))))
 	case Left:
 		imd.Push(tail.Add(pixel.V(1, 1)))
-		imd.Push(tail.Add(pixel.V(1+(1-progress)*(gameSettings.CellSize-2), gameSettings.CellSize-1)))
+		imd.Push(tail.Add(pixel.V(1+(1-tailProgress)*(gameSettings.CellSize-2), gameSettings.CellSize-1)))
 	case Right:
-		imd.Push(tail.Add(pixel.V(1+progress*(gameSettings.CellSize-2), 1)))
+		imd.Push(tail.Add(pixel.V(1+tailProgress*(gameSettings.CellSize-2), 1)))
 		imd.Push(tail.Add(pixel.V(gameSettings.CellSize-1, gameSettings.CellSize-1)))
 	}
 	imd.Rectangle(0)
@@ -182,6 +185,7 @@ func run() {
 		Speed:              200.0,
 		NextMoveOperations: list.New(),
 		IsGameOver:         false,
+		Debug:              false,
 	}
 
 	win, err := pixelgl.NewWindow(cfg)
@@ -221,7 +225,7 @@ func run() {
 		imd.Color = colornames.Blueviolet
 		drawGrid(imd, gameSettings)
 		drawFood(imd, gameSettings, snakeFood)
-		drawSnake(imd, gameSettings, snake, float64(millisFromUpdate)/gameState.Speed)
+		drawSnake(imd, gameState, gameSettings, snake, float64(millisFromUpdate)/gameState.Speed)
 
 		win.Clear(NOKIA_BACKGROUND_COLOR)
 		imd.Draw(win)
